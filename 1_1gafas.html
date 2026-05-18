@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Las Gafas de la Realidad: Paradigmas Físicos</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        anahuac: '#FF6B00',
+                        darkbg: '#0a0a0a',
+                        panel: '#151515'
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body { margin: 0; overflow: hidden; background-color: #0a0a0a; color: #e5e5e5; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        canvas { display: block; width: 100%; height: 100%; background: #000; border-radius: 0.5rem; }
+        .btn-paradigma { transition: all 0.3s ease; }
+        .btn-paradigma.active { background-color: #FF6B00; color: #000; box-shadow: 0 0 15px rgba(255,107,0,0.5); border-color: #FF6B00; }
+        .btn-paradigma:hover:not(.active) { border-color: #FF6B00; color: #FF6B00; }
+    </style>
+</head>
+<body class="h-screen flex flex-col p-4 md:p-6 gap-4">
+
+    <header class="flex-none text-center">
+        <h1 class="text-3xl md:text-4xl font-light tracking-wide text-anahuac uppercase">Las Gafas de la Realidad</h1>
+        <p class="text-gray-400 mt-1">Evolución de los Paradigmas Físicos y Epistemológicos</p>
+    </header>
+
+    <main class="flex-1 flex flex-col md:flex-row gap-4 overflow-hidden">
+        
+        <aside class="flex-none w-full md:w-64 flex flex-col gap-3">
+            <h2 class="text-sm uppercase tracking-widest text-gray-500 mb-2 border-b border-gray-700 pb-2">Selecciona un Filtro</h2>
+            
+            <button onclick="setMode('ARISTOTLE')" id="btn-ARISTOTLE" class="btn-paradigma active text-left px-4 py-3 rounded border border-gray-700 font-medium">
+                1. Aristóteles <span class="block text-xs font-normal opacity-70">Teleología y Cualidad</span>
+            </button>
+            <button onclick="setMode('NEWTON')" id="btn-NEWTON" class="btn-paradigma text-left px-4 py-3 rounded border border-gray-700 font-medium">
+                2. Newton <span class="block text-xs font-normal opacity-70">Mecanicismo y Geometría</span>
+            </button>
+            <button onclick="setMode('KANT')" id="btn-KANT" class="btn-paradigma text-left px-4 py-3 rounded border border-gray-700 font-medium">
+                3. Hume y Kant <span class="block text-xs font-normal opacity-70">El Giro Epistemológico</span>
+            </button>
+            <button onclick="setMode('QUANTUM')" id="btn-QUANTUM" class="btn-paradigma text-left px-4 py-3 rounded border border-gray-700 font-medium">
+                4. Cuántica <span class="block text-xs font-normal opacity-70">Probabilidad y Colapso</span>
+            </button>
+        </aside>
+
+        <section class="flex-1 flex flex-col gap-4 min-w-0">
+            <div class="flex-1 relative rounded-lg border border-gray-800 shadow-2xl overflow-hidden cursor-crosshair">
+                <canvas id="simCanvas"></canvas>
+                <div id="quantum-hint" class="hidden absolute top-4 left-1/2 -translate-x-1/2 bg-anahuac text-black px-4 py-1 rounded-full text-sm font-bold shadow-[0_0_10px_#FF6B00] animate-pulse pointer-events-none">
+                    ¡Haz clic en el lienzo para realizar una medición!
+                </div>
+            </div>
+
+            <div class="flex-none bg-panel p-5 rounded-lg border-l-4 border-anahuac shadow-lg">
+                <h3 id="info-title" class="text-xl text-anahuac font-semibold mb-2">Paradigma Teleológico</h3>
+                <p id="info-text" class="text-gray-300 leading-relaxed">
+                    Para Aristóteles, la física es cualitativa y teleológica. Los objetos se mueven guiados por una intención intrínseca para alcanzar su estado y lugar óptimo en el cosmos.
+                </p>
+            </div>
+        </section>
+
+    </main>
+
+    <script>
+        // Configuración de Textos
+        const explanations = {
+            'ARISTOTLE': {
+                title: 'Gafas de Aristóteles (Paradigma Teleológico)',
+                text: 'Para Aristóteles, la física es cualitativa y teleológica. Los objetos se mueven guiados por una intención intrínseca para alcanzar su estado y lugar óptimo en el cosmos. No hay matemáticas invisibles, solo el deseo de la "piedra" de reunirse con la "Tierra".'
+            },
+            'NEWTON': {
+                title: 'Gafas de Newton (Mecanicismo Determinista)',
+                text: 'El paradigma newtoniano matematiza la naturaleza. El universo es un mecanismo de relojería rígido, predecible y determinista. Todo se rige por leyes geométricas inexorables, fuerzas invisibles (gravedad) y vectores de movimiento exactos.'
+            },
+            'KANT': {
+                title: 'Gafas de Kant y Hume (El Giro Epistemológico)',
+                text: 'Hume dudó de la causalidad real y Kant propuso que el Espacio, el Tiempo y la Causalidad son la estructura interna de nuestra mente (el lente). No conocemos la realidad desnuda (noúmeno - el caos oscuro), sino solo el fenómeno ordenado y matemático filtrado por nuestro sistema cognitivo.'
+            },
+            'QUANTUM': {
+                title: 'Gafas Cuánticas (Probabilidad y No-Localidad)',
+                text: 'La revolución cuántica destruye el realismo ingenuo. Las partículas no poseen propiedades definidas antes de ser medidas; la realidad fundamental está hecha de superposiciones y probabilidades (Función de Onda). Al observar (medir), obligamos a la naturaleza a tomar una decisión, colapsando la onda.'
+            }
+        };
+
+        // Elementos DOM
+        const canvas = document.getElementById('simCanvas');
+        const ctx = canvas.getContext('2d');
+        const infoTitle = document.getElementById('info-title');
+        const infoText = document.getElementById('info-text');
+        const quantumHint = document.getElementById('quantum-hint');
+        
+        let mode = 'ARISTOTLE';
+        let mouseX = 0, mouseY = 0;
+        let time = 0;
+        let animationId;
+
+        // Redimensionar Canvas para Alta Resolución
+        function resize() {
+            const rect = canvas.parentElement.getBoundingClientRect();
+            canvas.width = rect.width * window.devicePixelRatio;
+            canvas.height = rect.height * window.devicePixelRatio;
+            ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+            canvas.style.width = `${rect.width}px`;
+            canvas.style.height = `${rect.height}px`;
+        }
+        window.addEventListener('resize', resize);
+
+        // Estado Físico Compartido
+        let obj = { x: 0, y: 0, vx: 0, vy: 0, radius: 25 };
+        let floatingTexts = [];
+        let quantumCloud = { cx: 0, cy: 0, spread: 200, isCollapsed: false };
+
+        // Función Auxiliar: Distribución Normal (Gaussiana)
+        function randomGaussian() {
+            let u = 0, v = 0;
+            while(u === 0) u = Math.random();
+            while(v === 0) v = Math.random();
+            return Math.sqrt( -2.0 * Math.log( u ) ) * Math.cos( 2.0 * Math.PI * v );
+        }
+
+        // Reiniciar variables según el modo
+        function resetPhysics() {
+            const w = canvas.width / window.devicePixelRatio;
+            const h = canvas.height / window.devicePixelRatio;
+            
+            obj.x = w / 2;
+            obj.y = 50;
+            // Reducida la velocidad inicial horizontal para Newton
+            obj.vx = 1.5; 
+            obj.vy = 0;
+            floatingTexts = [];
+            
+            quantumCloud.cx = w / 2;
+            quantumCloud.cy = h / 2;
+            quantumCloud.spread = Math.max(w, h); // Totalmente difuso
+            quantumCloud.isCollapsed = false;
+        }
+
+        // Cambio de Modo
+        window.setMode = function(newMode) {
+            mode = newMode;
+            
+            // UI Botones
+            document.querySelectorAll('.btn-paradigma').forEach(btn => btn.classList.remove('active'));
+            document.getElementById(`btn-${newMode}`).classList.add('active');
+            
+            // Textos
+            infoTitle.innerText = explanations[newMode].title;
+            infoText.innerText = explanations[newMode].text;
+            
+            // Hint Cuántico
+            if(mode === 'QUANTUM') quantumHint.classList.remove('hidden');
+            else quantumHint.classList.add('hidden');
+
+            resetPhysics();
+        }
+
+        // Interacciones del Mouse
+        canvas.addEventListener('mousemove', (e) => {
+            const rect = canvas.getBoundingClientRect();
+            mouseX = e.clientX - rect.left;
+            mouseY = e.clientY - rect.top;
+        });
+
+        canvas.addEventListener('mousedown', (e) => {
+            if (mode === 'QUANTUM') {
+                const rect = canvas.getBoundingClientRect();
+                quantumCloud.cx = e.clientX - rect.left;
+                quantumCloud.cy = e.clientY - rect.top;
+                quantumCloud.spread = 2; // Colapso instantáneo
+                quantumCloud.isCollapsed = true;
+            }
+        });
+
+        // Dibujar Flechas de Vector
+        function drawArrow(fromx, fromy, tox, toy, color, label) {
+            const headlen = 10; 
+            const dx = tox - fromx;
+            const dy = toy - fromy;
+            const angle = Math.atan2(dy, dx);
+            ctx.beginPath();
+            ctx.moveTo(fromx, fromy);
+            ctx.lineTo(tox, toy);
+            ctx.lineTo(tox - headlen * Math.cos(angle - Math.PI / 6), toy - headlen * Math.sin(angle - Math.PI / 6));
+            ctx.moveTo(tox, toy);
+            ctx.lineTo(tox - headlen * Math.cos(angle + Math.PI / 6), toy - headlen * Math.sin(angle + Math.PI / 6));
+            ctx.strokeStyle = color;
+            ctx.lineWidth = 2;
+            ctx.stroke();
+            
+            ctx.fillStyle = color;
+            ctx.font = '14px Consolas';
+            ctx.fillText(label, tox + 5, toy + 5);
+        }
+
+        // Motores de Renderizado por Gafa
+        function drawAristotle(w, h) {
+            // Fondo
+            ctx.fillStyle = '#111';
+            ctx.fillRect(0, 0, w, h);
+
+            // Suelo (El "Lugar Natural")
+            ctx.fillStyle = '#222';
+            ctx.fillRect(0, h - 40, w, 40);
+
+            // Gravedad orgánica MUY LENTA (acercándose suavemente al reposo)
+            const targetY = h - 40 - obj.radius;
+            // Modificado de 0.03 a 0.01 para un movimiento más lento
+            obj.y += (targetY - obj.y) * 0.01;
+
+            // Dibujar objeto como piedra rústica
+            ctx.beginPath();
+            ctx.arc(obj.x, obj.y, obj.radius, 0, Math.PI * 2);
+            ctx.fillStyle = '#8b8b8b';
+            ctx.fill();
+            ctx.strokeStyle = '#555';
+            ctx.lineWidth = 3;
+            ctx.stroke();
+
+            // Textos Teleológicos
+            if (Math.random() < 0.02 && (targetY - obj.y) > 10) {
+                floatingTexts.push({ x: obj.x + (Math.random()*40 - 20), y: obj.y, alpha: 1, text: "Buscando su lugar..." });
+            }
+            if (Math.random() < 0.01 && (targetY - obj.y) > 10) {
+                floatingTexts.push({ x: obj.x + (Math.random()*40 - 20), y: obj.y, alpha: 1, text: "Hacia la Tierra" });
+            }
+
+            ctx.font = 'italic 16px Georgia';
+            ctx.fillStyle = '#FF6B00';
+            for (let i = floatingTexts.length - 1; i >= 0; i--) {
+                let ft = floatingTexts[i];
+                // Textos flotan y desaparecen más lento
+                ft.y -= 0.3; 
+                ft.alpha -= 0.005; 
+                ctx.globalAlpha = ft.alpha;
+                ctx.fillText(ft.text, ft.x + 30, ft.y);
+                if (ft.alpha <= 0) floatingTexts.splice(i, 1);
+            }
+            ctx.globalAlpha = 1.0;
+        }
+
+        function drawNewton(w, h, skipBg = false) {
+            if (!skipBg) {
+                ctx.fillStyle = '#050505';
+                ctx.fillRect(0, 0, w, h);
+            }
+
+            // Cuadrícula Matemática
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.05)';
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            for(let i=0; i<w; i+=50) { ctx.moveTo(i, 0); ctx.lineTo(i, h); }
+            for(let i=0; i<h; i+=50) { ctx.moveTo(0, i); ctx.lineTo(w, i); }
+            ctx.stroke();
+
+            // Cinemática Clásica LENTA (Tiro Parabólico con rebotes)
+            const gravity = 0.15; // Reducido de 0.4 a 0.15 para simular "cámara lenta"
+            const damping = 0.85; 
+            
+            obj.vy += gravity;
+            obj.x += obj.vx;
+            obj.y += obj.vy;
+
+            // Rebotes
+            if (obj.y + obj.radius > h) { obj.y = h - obj.radius; obj.vy *= -damping; }
+            if (obj.x + obj.radius > w) { obj.x = w - obj.radius; obj.vx *= -1; }
+            if (obj.x - obj.radius < 0) { obj.x = obj.radius; obj.vx *= -1; }
+
+            // Masa Puntual
+            ctx.beginPath();
+            ctx.arc(obj.x, obj.y, obj.radius, 0, Math.PI * 2);
+            ctx.fillStyle = '#fff';
+            ctx.fill();
+
+            // Vectores
+            drawArrow(obj.x, obj.y, obj.x + obj.vx * 15, obj.y + obj.vy * 15, '#00ff88', 'v'); // Velocidad
+            drawArrow(obj.x, obj.y, obj.x, obj.y + gravity * 150, '#ff4444', 'g'); // Gravedad (Multiplicador ajustado visualmente)
+
+            // HUD Matemático
+            ctx.fillStyle = '#FF6B00';
+            ctx.font = '14px Consolas';
+            ctx.fillText(`X: ${obj.x.toFixed(1)} m`, 20, 30);
+            ctx.fillText(`Y: ${(h - obj.y).toFixed(1)} m`, 20, 50);
+            ctx.fillText(`t: ${(time/60).toFixed(2)} s`, 20, 70);
+        }
+
+        function drawKant(w, h) {
+            // Fondo Noúmeno (Caos incognoscible - Estática abstracta)
+            ctx.fillStyle = '#0a0a0a';
+            ctx.fillRect(0, 0, w, h);
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.03)';
+            for(let i=0; i<100; i++) {
+                ctx.beginPath();
+                ctx.arc(Math.random()*w, Math.random()*h, Math.random()*10, 0, Math.PI*2);
+                ctx.fill();
+            }
+
+            // Lente de la Mente (Categorías A Priori)
+            ctx.save();
+            ctx.beginPath();
+            ctx.arc(mouseX, mouseY, 180, 0, Math.PI * 2);
+            ctx.clip(); // Cortar todo fuera de este círculo
+
+            // Dentro del lente, existe el orden Newtoniano (Fenómeno)
+            ctx.fillStyle = '#050505';
+            ctx.fillRect(0, 0, w, h);
+            drawNewton(w, h, true); // Reutilizamos lógica de Newton lenta pero con skipBg = true
+
+            ctx.restore();
+
+            // Borde del lente (La estructura cognitiva)
+            ctx.beginPath();
+            ctx.arc(mouseX, mouseY, 180, 0, Math.PI * 2);
+            ctx.strokeStyle = '#FF6B00';
+            ctx.lineWidth = 3;
+            ctx.stroke();
+            ctx.shadowBlur = 20;
+            ctx.shadowColor = '#FF6B00';
+            ctx.stroke();
+            ctx.shadowBlur = 0;
+            
+            ctx.fillStyle = '#FF6B00';
+            ctx.font = '12px Tahoma';
+            ctx.fillText("Filtro Cognitivo (Fenómeno)", mouseX - 70, mouseY - 190);
+        }
+
+        function drawQuantum(w, h) {
+            ctx.fillStyle = '#020205';
+            ctx.fillRect(0, 0, w, h);
+
+            // Dinámica del paquete de ondas (Ecuación de Schrödinger difusa)
+            if (quantumCloud.isCollapsed) {
+                quantumCloud.spread += 1.5; // Dispersión tras la medida (Heisenberg)
+                if (quantumCloud.spread > Math.max(w, h) * 0.8) {
+                    quantumCloud.isCollapsed = false; // Vuelve a estar en todas partes
+                }
+            }
+
+            // Representación de la Densidad de Probabilidad con puntos
+            ctx.fillStyle = 'rgba(0, 229, 255, 0.4)'; // Color Cuántico Cian
+            
+            for (let i = 0; i < 1500; i++) {
+                // Obtener coordenadas de una distribución de Gauss
+                let px = quantumCloud.cx + randomGaussian() * quantumCloud.spread;
+                let py = quantumCloud.cy + randomGaussian() * quantumCloud.spread;
+                
+                // Efecto de ondulación (Fase)
+                let phase = Math.sin((px + py) * 0.05 - time * 0.1);
+                
+                // Solo dibujar si está en pantalla
+                if (px > 0 && px < w && py > 0 && py < h) {
+                    ctx.globalAlpha = Math.max(0.1, 0.8 + phase * 0.2);
+                    ctx.fillRect(px, py, 2, 2);
+                }
+            }
+            ctx.globalAlpha = 1.0;
+
+            // HUD
+            ctx.fillStyle = '#00e5ff';
+            ctx.font = '14px Consolas';
+            ctx.fillText(quantumCloud.isCollapsed ? "ESTADO: COLAPSADO (PARTÍCULA)" : "ESTADO: SUPERPOSICIÓN (ONDA)", 20, 30);
+            ctx.fillText(`Δx (Incertidumbre Posición): ${quantumCloud.spread.toFixed(1)}`, 20, 50);
+        }
+
+        // Bucle Principal
+        function animate() {
+            const w = canvas.width / window.devicePixelRatio;
+            const h = canvas.height / window.devicePixelRatio;
+
+            ctx.clearRect(0, 0, w, h);
+
+            switch(mode) {
+                case 'ARISTOTLE': drawAristotle(w, h); break;
+                case 'NEWTON': drawNewton(w, h); break;
+                case 'KANT': drawKant(w, h); break;
+                case 'QUANTUM': drawQuantum(w, h); break;
+            }
+
+            time++;
+            animationId = requestAnimationFrame(animate);
+        }
+
+        // Inicialización
+        resize();
+        resetPhysics();
+        setMode('ARISTOTLE');
+        animate();
+
+    </script>
+</body>
+</html>
